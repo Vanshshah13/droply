@@ -80,13 +80,6 @@ export default function Dashboard() {
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     "User";
 
-  useEffect(() => {
-    if (userId) {
-      fetchFiles();
-      fetchStorage();
-    }
-  }, [userId]);
-
   const fetchStorage = async () => {
     try {
       const res = await fetch("/api/storage");
@@ -94,16 +87,7 @@ export default function Dashboard() {
       if (res.ok) setStorage(data);
     } catch { }
   };
-  const goBack = () => {
-    if (breadcrumbs.length <= 1) return;
 
-    const newBreadcrumbs = breadcrumbs.slice(0, -1);
-    const last = newBreadcrumbs[newBreadcrumbs.length - 1];
-
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(last?.id ?? null);
-    fetchFiles(last?.id ?? null);
-  };
   const fetchFiles = async (folderId: string | null = null) => {
     try {
       setLoading(true);
@@ -147,6 +131,32 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+useEffect(() => {
+  if (!userId) return;
+
+  const load = async () => {
+    await Promise.all([
+      fetchFiles(),
+      fetchStorage(),
+    ]);
+  };
+
+  load();
+}, [userId]);
+
+
+  const goBack = () => {
+    if (breadcrumbs.length <= 1) return;
+
+    const newBreadcrumbs = breadcrumbs.slice(0, -1);
+    const last = newBreadcrumbs[newBreadcrumbs.length - 1];
+
+    setBreadcrumbs(newBreadcrumbs);
+    setCurrentFolderId(last?.id ?? null);
+    fetchFiles(last?.id ?? null);
+  };
+
   const createFolder = async () => {
     const name = prompt("Folder name");
     if (!name) return;
@@ -373,243 +383,241 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#050816] text-cyan-50 flex">
-  {/* Sidebar */}
-  <aside
-    className={`fixed lg:relative z-50 top-0 left-0 h-screen w-72 
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:relative z-50 top-0 left-0 h-screen w-72 
     bg-[#0b1120] border-r border-cyan-500/20 flex flex-col
-    transition-transform duration-300 ${
-      mobileMenu
-        ? "translate-x-0"
-        : "-translate-x-full lg:translate-x-0"
-    }`}
-  >
-    {/* Logo */}
-    <div className="p-6 border-b border-cyan-500/20 flex items-center justify-between">
-      <Link
-        href="/"
-        className="text-2xl font-semibold tracking-tight text-cyan-300 drop-shadow-[0_0_12px_rgba(34,211,238,.6)]"
+    transition-transform duration-300 ${mobileMenu
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
+          }`}
       >
-        Droply
-      </Link>
+        {/* Logo */}
+        <div className="p-6 border-b border-cyan-500/20 flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-2xl font-semibold tracking-tight text-cyan-300 drop-shadow-[0_0_12px_rgba(34,211,238,.6)]"
+          >
+            Droply
+          </Link>
 
-      <button
-        onClick={() => setMobileMenu(false)}
-        className="lg:hidden text-cyan-300"
-      >
-        <X />
-      </button>
-    </div>
+          <button
+            onClick={() => setMobileMenu(false)}
+            className="lg:hidden text-cyan-300"
+          >
+            <X />
+          </button>
+        </div>
 
-    {/* User */}
-    <div className="p-5">
-      <Link href="/profile">
-        <div
-          className="rounded-xl p-4 border border-cyan-400/20
+        {/* User */}
+        <div className="p-5">
+          <Link href="/profile">
+            <div
+              className="rounded-xl p-4 border border-cyan-400/20
           bg-cyan-500/5 hover:bg-cyan-500/10 transition
           shadow-[0_0_20px_rgba(34,211,238,.08)]"
-        >
-          <p className="text-xs text-cyan-400/70">
-            Signed in as
-          </p>
+            >
+              <p className="text-xs text-cyan-400/70">
+                Signed in as
+              </p>
 
-          <p className="text-sm mt-1 truncate font-medium text-cyan-100">
-            {user?.primaryEmailAddress?.emailAddress}
-          </p>
+              <p className="text-sm mt-1 truncate font-medium text-cyan-100">
+                {user?.primaryEmailAddress?.emailAddress}
+              </p>
+            </div>
+          </Link>
         </div>
-      </Link>
-    </div>
 
-    {/* Nav */}
-    <div className="px-4 flex-1">
-      <nav className="space-y-2">
-        {[
-          { id: "files", icon: Home, label: "All Files" },
-          { id: "stared", icon: Star, label: "Starred" },
-          { id: "trash", icon: Trash2, label: "Trash" },
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setSection(item.id as any)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-              section === item.id
-                ? `
+        {/* Nav */}
+        <div className="px-4 flex-1">
+          <nav className="space-y-2">
+            {[
+              { id: "files", icon: Home, label: "All Files" },
+              { id: "stared", icon: Star, label: "Starred" },
+              { id: "trash", icon: Trash2, label: "Trash" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSection(item.id as any)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${section === item.id
+                    ? `
                 bg-cyan-500/10 text-cyan-300 border border-cyan-400/30
                 shadow-[0_0_18px_rgba(34,211,238,.2)]
                 `
-                : `
+                    : `
                 text-cyan-100/70 hover:bg-cyan-500/5 hover:text-cyan-300
                 `
-            }`}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-          </button>
-        ))}
-      </nav>
-    </div>
+                  }`}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-    {/* Logout */}
-    <div className="p-4 border-t border-cyan-500/20">
-      <button
-        onClick={logout}
-        className="w-full h-11 rounded-xl
+        {/* Logout */}
+        <div className="p-4 border-t border-cyan-500/20">
+          <button
+            onClick={logout}
+            className="w-full h-11 rounded-xl
         bg-cyan-500/5 border border-cyan-400/20
         hover:bg-cyan-500/10
         shadow-[0_0_15px_rgba(34,211,238,.08)]
         transition flex items-center justify-center gap-2"
-      >
-        <LogOut className="w-4 h-4" />
-        Logout
-      </button>
-    </div>
-  </aside>
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        </div>
+      </aside>
 
-  {/* Overlay */}
-  {mobileMenu && (
-    <div
-      className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-      onClick={() => setMobileMenu(false)}
-    />
-  )}
+      {/* Overlay */}
+      {mobileMenu && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setMobileMenu(false)}
+        />
+      )}
 
-  {/* Main */}
-  <div className="flex-1 flex flex-col">
+      {/* Main */}
+      <div className="flex-1 flex flex-col">
 
-    {/* Header */}
-    <header
-      className="h-20 px-4 lg:px-8 flex items-center justify-between
+        {/* Header */}
+        <header
+          className="h-20 px-4 lg:px-8 flex items-center justify-between
       border-b border-cyan-500/20 bg-[#050816]"
-    >
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => setMobileMenu(true)}
-          className="lg:hidden text-cyan-300"
         >
-          <Menu />
-        </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMobileMenu(true)}
+              className="lg:hidden text-cyan-300"
+            >
+              <Menu />
+            </button>
 
-        <div>
-          <div className="flex items-center gap-2 text-xs text-cyan-500">
-            {breadcrumbs.map((crumb, i) => (
-              <div key={i} className="flex items-center gap-2">
-                {i > 0 && (
-                  <ChevronRight className="w-3 h-3"/>
-                )}
+            <div>
+              <div className="flex items-center gap-2 text-xs text-cyan-500">
+                {breadcrumbs.map((crumb, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    {i > 0 && (
+                      <ChevronRight className="w-3 h-3" />
+                    )}
 
-                <button
-                  onClick={() => {
-                    const newPath = breadcrumbs.slice(0,i+1);
-                    setBreadcrumbs(newPath);
-                    setCurrentFolderId(crumb.id);
-                    fetchFiles(crumb.id);
-                  }}
-                  className="hover:text-cyan-300"
-                >
-                  {crumb.name}
-                </button>
+                    <button
+                      onClick={() => {
+                        const newPath = breadcrumbs.slice(0, i + 1);
+                        setBreadcrumbs(newPath);
+                        setCurrentFolderId(crumb.id);
+                        fetchFiles(crumb.id);
+                      }}
+                      className="hover:text-cyan-300"
+                    >
+                      {crumb.name}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
+
+              <h1 className="text-2xl font-semibold text-cyan-100 mt-1">
+                Dashboard
+              </h1>
+            </div>
           </div>
 
-          <h1 className="text-2xl font-semibold text-cyan-100 mt-1">
-            Dashboard
-          </h1>
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
 
-      <div className="flex items-center gap-3">
-
-        {/* Search */}
-        <div className="hidden md:flex relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-cyan-500"/>
-          <input
-            value={search}
-            onChange={(e)=>setSearch(e.target.value)}
-            placeholder="Search files..."
-            className="
+            {/* Search */}
+            <div className="hidden md:flex relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-cyan-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search files..."
+                className="
             w-72 h-10 pl-10 rounded-xl
             bg-cyan-500/5 border border-cyan-400/20
             focus:border-cyan-300
             outline-none"
-          />
-        </div>
+              />
+            </div>
 
-        {/* Create Folder */}
-        <button
-          onClick={createFolder}
-          className="
+            {/* Create Folder */}
+            <button
+              onClick={createFolder}
+              className="
           h-10 px-4 rounded-xl
           bg-cyan-500/5 border border-cyan-400/20
           hover:bg-cyan-500/10
           shadow-[0_0_12px_rgba(34,211,238,.08)]
           flex items-center gap-2"
-        >
-          <FolderPlus className="w-4 h-4"/>
-          New Folder
-        </button>
+            >
+              <FolderPlus className="w-4 h-4" />
+              New Folder
+            </button>
 
-        {/* Upload */}
+            {/* Upload */}
 
-      </div>
-    </header>
+          </div>
+        </header>
 
-    {/* Stats */}
-    <section className="grid md:grid-cols-3 gap-4 p-4 lg:p-8 pb-0">
-      {[
-        ["Total Items", filteredFiles.length],
-        ["Folders", filteredFiles.filter(f=>f.type==="folder").length],
-        ["Files", filteredFiles.filter(f=>f.type==="file").length]
-      ].map(([label,value])=>(
-        <div
-          key={label}
-          className="
+        {/* Stats */}
+        <section className="grid md:grid-cols-3 gap-4 p-4 lg:p-8 pb-0">
+          {[
+            ["Total Items", filteredFiles.length],
+            ["Folders", filteredFiles.filter(f => f.type === "folder").length],
+            ["Files", filteredFiles.filter(f => f.type === "file").length]
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              className="
           rounded-2xl p-5
           border border-cyan-500/20
           bg-cyan-500/5
           shadow-[0_0_20px_rgba(34,211,238,.08)]"
-        >
-          <p className="text-sm text-cyan-400">
-            {label}
-          </p>
+            >
+              <p className="text-sm text-cyan-400">
+                {label}
+              </p>
 
-          <h2 className="text-3xl font-bold mt-2 text-cyan-100">
-            {value}
-          </h2>
-        </div>
-      ))}
-    </section>
-
-    {/* Files */}
-    <main className="flex-1 p-4 lg:p-8">
-
-      {loading ? (
-        <div className="grid md:grid-cols-4 gap-4">
-          {[...Array(8)].map((_,i)=>(
-            <div
-              key={i}
-              className="h-40 rounded-2xl bg-cyan-500/5 animate-pulse"
-            />
+              <h2 className="text-3xl font-bold mt-2 text-cyan-100">
+                {value}
+              </h2>
+            </div>
           ))}
-        </div>
-      ) : filteredFiles.length===0 ? (
+        </section>
 
-        <div className="h-[60vh] flex flex-col items-center justify-center text-center">
-  <Sparkles className="w-14 h-14 text-cyan-300 mb-5" />
+        {/* Files */}
+        <main className="flex-1 p-4 lg:p-8">
 
-  <h3 className="text-3xl font-semibold text-cyan-100">
-    Nothing here yet
-  </h3>
+          {loading ? (
+            <div className="grid md:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-40 rounded-2xl bg-cyan-500/5 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : filteredFiles.length === 0 ? (
 
-  <p className="text-cyan-500 mt-3 max-w-md">
-    Upload files or create a folder to get started.
-  </p>
+            <div className="h-[60vh] flex flex-col items-center justify-center text-center">
+              <Sparkles className="w-14 h-14 text-cyan-300 mb-5" />
 
-  <div className="flex flex-col sm:flex-row gap-4 mt-8">
+              <h3 className="text-3xl font-semibold text-cyan-100">
+                Nothing here yet
+              </h3>
 
-    {/* Upload */}
-    <button
-      onClick={() => fileInputRef.current?.click()}
-      className="
+              <p className="text-cyan-500 mt-3 max-w-md">
+                Upload files or create a folder to get started.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
+
+                {/* Upload */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="
         h-12 px-6 rounded-xl
         bg-cyan-400 text-black font-semibold
         flex items-center gap-2
@@ -617,19 +625,19 @@ export default function Dashboard() {
         transition-all
         shadow-[0_0_20px_rgba(34,211,238,.35)]
       "
-    >
-      {uploading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <Upload className="w-4 h-4" />
-      )}
-      Upload File
-    </button>
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Upload File
+                </button>
 
-    {/* Create Folder */}
-    <button
-      onClick={createFolder}
-      className="
+                {/* Create Folder */}
+                <button
+                  onClick={createFolder}
+                  className="
         h-12 px-6 rounded-xl
         border border-cyan-400/30
         bg-cyan-500/5
@@ -638,127 +646,126 @@ export default function Dashboard() {
         flex items-center gap-2
         transition-all
       "
-    >
-      <FolderPlus className="w-4 h-4" />
-      New Folder
-    </button>
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  New Folder
+                </button>
 
-  </div>
-</div>
+              </div>
+            </div>
 
-      ) : (
+          ) : (
 
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
-          {filteredFiles.map((file)=>(
-            <div
-              key={file.id}
-              className="
+              {filteredFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="
               group rounded-2xl p-4
               border border-cyan-500/20
               bg-cyan-500/5
               hover:border-cyan-300/40
               hover:shadow-[0_0_25px_rgba(34,211,238,.15)]
               transition"
-            >
+                >
 
-              <div
-                onClick={()=>openFolder(file)}
-                className="cursor-pointer"
-              >
-                <div
-                  className="
+                  <div
+                    onClick={() => openFolder(file)}
+                    className="cursor-pointer"
+                  >
+                    <div
+                      className="
                   w-14 h-14 rounded-xl
                   bg-cyan-500/10
                   flex items-center justify-center mb-4"
-                >
-                  {getIcon(file)}
+                    >
+                      {getIcon(file)}
+                    </div>
+
+                    <h3 className="font-medium truncate">
+                      {file.name}
+                    </h3>
+
+                    <p className="text-xs text-cyan-500 mt-1">
+                      {file.size || "Folder"} • {file.modified}
+                    </p>
+                  </div>
+
+                  {file.type === "file" && (
+                    <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition">
+
+                      <button
+                        onClick={() => toggleStar(file.id)}
+                        className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
+                      >
+                        <Star
+                          className={`w-4 h-4 ${file.stared
+                              ? "fill-cyan-300 text-cyan-300"
+                              : ""
+                            }`}
+                        />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          file.url && window.open(file.url, "_blank")
+                        }
+                        className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          file.url &&
+                          window.open(
+                            `${file.url}?ik-attachment=true`,
+                            "_blank"
+                          )
+                        }
+                        className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => toggleTrash(file.id)}
+                        className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
+                      >
+                        {section === "trash"
+                          ? <Plus className="w-4 h-4" />
+                          : <Trash2 className="w-4 h-4" />}
+                      </button>
+
+                    </div>
+                  )}
+
                 </div>
-
-                <h3 className="font-medium truncate">
-                  {file.name}
-                </h3>
-
-                <p className="text-xs text-cyan-500 mt-1">
-                  {file.size || "Folder"} • {file.modified}
-                </p>
-              </div>
-
-              {file.type==="file" && (
-                <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition">
-
-                  <button
-                    onClick={()=>toggleStar(file.id)}
-                    className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
-                  >
-                    <Star
-                      className={`w-4 h-4 ${
-                        file.stared
-                        ? "fill-cyan-300 text-cyan-300"
-                        : ""
-                      }`}
-                    />
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      file.url && window.open(file.url,"_blank")
-                    }
-                    className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
-                  >
-                    <Eye className="w-4 h-4"/>
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      file.url &&
-                      window.open(
-                        `${file.url}?ik-attachment=true`,
-                        "_blank"
-                      )
-                    }
-                    className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
-                  >
-                    <Download className="w-4 h-4"/>
-                  </button>
-
-                  <button
-                    onClick={()=>toggleTrash(file.id)}
-                    className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20"
-                  >
-                    {section==="trash"
-                      ? <Plus className="w-4 h-4"/>
-                      : <Trash2 className="w-4 h-4"/>}
-                  </button>
-
-                </div>
-              )}
+              ))}
 
             </div>
-          ))}
 
-        </div>
+          )}
 
-      )}
+        </main>
 
-    </main>
+        <input
+          ref={fileInputRef}
+          type="file"
+          hidden
+          multiple
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              handleUpload(e.target.files[0]);
+            }
+          }}
+        />
 
-    <input
-      ref={fileInputRef}
-      type="file"
-      hidden
-      multiple
-      onChange={(e)=>{
-        if(e.target.files?.[0]){
-          handleUpload(e.target.files[0]);
-        }
-      }}
-    />
-
-    {section === "trash" && (
-  <button
-    onClick={emptyTrash}
-    className="
+        {section === "trash" && (
+          <button
+            onClick={emptyTrash}
+            className="
       fixed bottom-24 right-6 z-50
       h-12 px-5 rounded-full
       bg-rose-500 text-white font-semibold
@@ -768,33 +775,33 @@ export default function Dashboard() {
       active:scale-95
       transition-all duration-300
     "
-  >
-    <Trash2 className="w-4 h-4" />
-    <span className="hidden sm:block">
-      Empty Trash
-    </span>
-  </button>
-)}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:block">
+              Empty Trash
+            </span>
+          </button>
+        )}
 
-    {/* Floating Upload Button */}
-<button
-  onClick={() => fileInputRef.current?.click()}
-  className="
-    fixed bottom-6 right-6 z-50 h-12 px-5 rounded-full bg-cyan-400 text-black font-semibold flex items-center gap-3 shadow-[0_0_35px_rgba(34,211,238,.55 hover:scale-105 hover:shadow-[0_0_45px_rgba(34,211,238,.7)] active:scale-95 transition-all duration-300
+        {/* Floating Upload Button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="
+    fixed bottom-6 right-6 z-50 h-12 px-5 rounded-full bg-cyan-400 text-black font-semibold flex items-center gap-3 shadow-[0_0_35px_rgba(34,211,238,.55)] hover:scale-105 hover:shadow-[0_0_45px_rgba(34,211,238,.7)] active:scale-95 transition-all duration-300
   "
->
-  {uploading ? (
-    <Loader2 className="w-5 h-5 animate-spin" />
-  ) : (
-    <Upload className="w-5 h-5" />
-  )}
+        >
+          {uploading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Upload className="w-5 h-5" />
+          )}
 
-  <span className="hidden sm:block">
-    Upload
-  </span>
-</button>
+          <span className="hidden sm:block">
+            Upload
+          </span>
+        </button>
 
-  </div>
-</div>
+      </div>
+    </div>
   );
 }
