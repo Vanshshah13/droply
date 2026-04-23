@@ -3,7 +3,7 @@
 import React from "react"
 import type { ThemeProviderProps } from "next-themes"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { ImageKitProvider } from "imagekitio-next"
+import { ImageKitProvider } from "@imagekit/next"
 import { HeroUIProvider } from "@heroui/system"
 
 import { ToastContainer } from "react-toastify"
