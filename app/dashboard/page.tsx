@@ -124,10 +124,10 @@ export default function Dashboard() {
       }
       if (!res.ok) throw new Error();
 
-      const mapped = data.map((f: any) => ({
+      const mapped: FileItem[] = data.map((f: any): FileItem => ({
         id: f.id,
         name: f.name,
-        type: f.isFolder ? "folder" : "file",
+        type: f.isFolder ? ("folder" as const) : ("file" as const),
         fileType: f.type?.startsWith("image")
           ? "image"
           : f.type?.includes("pdf")
@@ -432,11 +432,11 @@ export default function Dashboard() {
                 key={item.id}
                 onClick={() => setSection(item.id as any)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${section === item.id
-                    ? `
+                  ? `
                 bg-cyan-500/10 text-cyan-300 border border-cyan-400/30
                 shadow-[0_0_18px_rgba(34,211,238,.2)]
                 `
-                    : `
+                  : `
                 text-cyan-100/70 hover:bg-cyan-500/5 hover:text-cyan-300
                 `
                   }`}
@@ -693,8 +693,8 @@ export default function Dashboard() {
                       >
                         <Star
                           className={`w-4 h-4 ${file.stared
-                              ? "fill-cyan-300 text-cyan-300"
-                              : ""
+                            ? "fill-cyan-300 text-cyan-300"
+                            : ""
                             }`}
                         />
                       </button>
