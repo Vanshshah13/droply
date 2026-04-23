@@ -80,6 +80,13 @@ export default function Dashboard() {
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
     "User";
 
+  useEffect(() => {
+    if (userId) {
+      fetchFiles();
+      fetchStorage();
+    }
+  }, [userId]);
+
   const fetchStorage = async () => {
     try {
       const res = await fetch("/api/storage");
@@ -87,7 +94,16 @@ export default function Dashboard() {
       if (res.ok) setStorage(data);
     } catch { }
   };
+  const goBack = () => {
+    if (breadcrumbs.length <= 1) return;
 
+    const newBreadcrumbs = breadcrumbs.slice(0, -1);
+    const last = newBreadcrumbs[newBreadcrumbs.length - 1];
+
+    setBreadcrumbs(newBreadcrumbs);
+    setCurrentFolderId(last?.id ?? null);
+    fetchFiles(last?.id ?? null);
+  };
   const fetchFiles = async (folderId: string | null = null) => {
     try {
       setLoading(true);
@@ -98,12 +114,14 @@ export default function Dashboard() {
 
       // IMPORTANT FIX
       if (folderId) {
-        url.searchParams.append("parentId", folderId);
+        url.searchParams.append("parentId", folderId ?? "null");
       }
 
       const res = await fetch(url.toString());
       const data = await res.json();
-
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid response");
+      }
       if (!res.ok) throw new Error();
 
       const mapped = data.map((f: any) => ({
@@ -131,32 +149,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-useEffect(() => {
-  if (!userId) return;
-
-  const load = async () => {
-    await Promise.all([
-      fetchFiles(),
-      fetchStorage(),
-    ]);
-  };
-
-  load();
-}, [userId]);
-
-
-  const goBack = () => {
-    if (breadcrumbs.length <= 1) return;
-
-    const newBreadcrumbs = breadcrumbs.slice(0, -1);
-    const last = newBreadcrumbs[newBreadcrumbs.length - 1];
-
-    setBreadcrumbs(newBreadcrumbs);
-    setCurrentFolderId(last?.id ?? null);
-    fetchFiles(last?.id ?? null);
-  };
-
   const createFolder = async () => {
     const name = prompt("Folder name");
     if (!name) return;

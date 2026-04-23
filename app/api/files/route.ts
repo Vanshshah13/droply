@@ -29,7 +29,7 @@ export  async function GET (request : NextRequest){
         }
 
         // Fetch files from Database
-        let userFiles  
+        let userFiles ;
 
         if(parentId){
             // Fetching from specific folder
@@ -52,7 +52,7 @@ export  async function GET (request : NextRequest){
         return NextResponse.json(userFiles)
     } catch (error) {
         return NextResponse.json({
-            error : "Failed to fetching files"
+            error : "Failed to fetch files"
         } , {status : 500})
     }
 }
